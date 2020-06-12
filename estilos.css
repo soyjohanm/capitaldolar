@@ -1,0 +1,89 @@
+body {
+  font-family: Ubuntu, 'Segoe UI', sans-serif;
+}
+#contenedor_imagen {
+  height: 750px;
+  width: 750px;
+  background-image: url(./bg.png);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+#fechaNombre {
+  text-transform: uppercase;
+  font-size: 21px;
+  font-weight: bold;
+  position: absolute;
+  top: 15px;
+  left: 175px;
+}
+#fechaDatos {
+  font-size: 21px;
+  position: absolute;
+  top: 40px;
+  left: 180px;
+}
+.promedio{
+  text-transform: uppercase;
+  font-size: 33px;
+  font-weight: lighter;
+}
+#tituloPromedio{
+  letter-spacing: 2.4px;
+  position: absolute;
+  top: 310px;
+  left: 64px;
+}
+#valorPromedio {
+  text-shadow: 1.5px 1.5px rgba(0,0,0,0.57);
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  position: absolute;
+  top: 310px;
+  left: 320px;
+}
+#porcentajePromedio {
+  letter-spacing: 0.2px;
+  position: absolute;
+  top: 310px;
+  left: 580px;
+}
+#flechita {
+  position: absolute;
+  top: 310px;
+  left: 685px;
+}
+.valores {
+  font-family: Muli, 'Segoe UI', sans-serif;
+  font-size: 22px;
+  position: absolute;
+  top: 405px;
+}
+td {
+  padding: 6px;
+}
+#instagram {
+  font-family: Impact, 'Segoe UI', sans-serif;
+  font-size: 26px;
+  position: absolute;
+  top: 720px;
+  left: 55px;
+}
+.btn,.btn-large,.btn-small,.btn-floating,.btn-large,.btn-small,.btn-flat {
+  font-size: 14px;
+  outline: 0
+}
+.btn,.btn-large,.btn-small {
+  text-decoration: none;
+  color: #fff;
+  background-color: #ff0000;
+  text-align: center;
+  letter-spacing: .5px;
+  -webkit-transition: background-color .2s ease-out;
+  transition: background-color .2s ease-out;
+  cursor: pointer
+}
+form {
+  position: absolute;
+  top: 40px;
+  left: 65%;
+}
