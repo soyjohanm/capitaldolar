@@ -68,22 +68,61 @@ td {
   top: 720px;
   left: 55px;
 }
-.btn,.btn-large,.btn-small,.btn-floating,.btn-large,.btn-small,.btn-flat {
-  font-size: 14px;
-  outline: 0
+.btn, .btn-large, .btn-small, .btn-flat {
+  border: none;
+  border-radius: 2px;
+  display: inline-block;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 16px;
+  text-transform: uppercase;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn,.btn-large,.btn-small {
+.btn, .btn-large, .btn-small, .btn-floating, .btn-large, .btn-small, .btn-flat {
+  font-size: 14px;
+  outline: 0;
+}
+.btn, .btn-large, .btn-small {
   text-decoration: none;
   color: #fff;
-  background-color: #ff0000;
+  background-color: #0000ff;
   text-align: center;
   letter-spacing: .5px;
   -webkit-transition: background-color .2s ease-out;
   transition: background-color .2s ease-out;
-  cursor: pointer
+  cursor: pointer;
+}
+.btn-flat {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  background-color: transparent;
+  color: #343434;
+  cursor: pointer;
+  -webkit-transition: background-color .2s;
+  transition: background-color .2s;
+}
+.btn-flat:focus, .btn-flat:hover {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+button, input, optgroup, select, textarea {
+  font-family: sans-serif;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+button, input {
+  overflow: visible;
 }
 form {
   position: absolute;
-  top: 40px;
-  left: 65%;
+  top: 35%;
+  left: 85%;
+}
+#contenedor_informacion {
+  position: absolute;
+  top: 0;
+  width: 38%;
+  left: 61%;
 }
