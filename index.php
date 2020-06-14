@@ -24,11 +24,18 @@
     $jsonYADIO = file_get_contents($urlYADIO);
     $objYADIO = json_decode($jsonYADIO, true);
     $yadio = $objYADIO['USD']['rate'];
-    $query = $conexion->prepare("SELECT count(*) FROM valores WHERE fecha=CURRENT_DATE())");
+    $query = $conexion->prepare("SELECT count(*) AS cantidad FROM valores WHERE fecha=CURRENT_DATE())");
     $query->execute();
     $row = $query->fetch(PDO::FETCH_OBJ);
-    if ($row == 0) {
-      $query = $conexion->prepare("INSERT INTO valores(bcv,dolartoday,localbitcoin,theairtm,yadio,fecha) VALUES ($bcv,$dolartoday,$localbitcoin,$theairtm,$yadio,CURRENT_DATE())");
+    if ($row->cantidad == 0) {
+	  $query = $conexion->prepare("SELECT count(*) AS cantidad FROM valores");
+	  $query->execute();
+      $row = $query->fetch(PDO::FETCH_OBJ);
+	  if ($row->cantidad == 0) {
+		$query = $conexion->prepare("INSERT INTO valores(bcv,dolartoday,localbitcoin,theairtm,yadio,fecha) VALUES ($bcv,$dolartoday,$localbitcoin,$theairtm,$yadio,CURRENT_DATE())");
+        $query->execute();
+	  }
+      $query = $conexion->prepare("INSERT INTO valores(bcv,dolartoday,localbitcoin,theairtm,yadio,fecha) VALUES ($bcv,$dolartoday,$localbitcoin,$theairtm,$yadio,(SELECT DATE_SUB(CONCAT(CURDATE()), INTERVAL 1 DAY) AS ayer))");
       $query->execute();
     }
   }
