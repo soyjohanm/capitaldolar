@@ -1,50 +1,55 @@
 <?php
   //CONECTO A LA BASE DE DATOS
   require_once 'bd.php';
-  //ESTABLEZCO LA ZONA HORARIA
+  //ESTABLEZCO ZONA HORARIA
   date_default_timezone_set('America/Caracas');
-  //OBTENGO LOS DIAS DE AYER Y HOY
-  $hoy = date('Y-m-d');
-  $ayer = date("Y-m-d",strtotime($hoy."- 1 days"));
-  //CONSULTO EL PROMEDIO DE AYER Y HOY
-  $queryHoy = $conexion->prepare("SELECT sum(`bcv`+`dolartoday`+`localbitcoin`+`theairtm`+`yadio`) as suma from valores where fecha='$hoy'");
-  $queryHoy->execute();
-  $rowHoy = $queryHoy->fetch(PDO::FETCH_OBJ);
-  $queryAyer = $conexion->prepare("SELECT sum(`bcv`+`dolartoday`+`localbitcoin`+`theairtm`+`yadio`) as suma from valores where fecha='$ayer'");
-  $queryAyer->execute();
-  $rowAyer = $queryAyer->fetch(PDO::FETCH_OBJ);
-  //ALMACENO LOS PROMEDIO DEL VALOR Y PORCENTAJE
-  $valorPromedioHoy = number_format((($rowHoy->suma)/5),'2',',','.');
-  $porcentajePromedio = (((($rowHoy->suma)/5)-(($rowAyer->suma)/5))/(($rowAyer->suma)/5))*100;
-  //OBTENGO LOS PRECIOS DE HOY Y AYER
-  $queryHoy = $conexion->prepare("SELECT * FROM valores WHERE fecha='$hoy'");
-  $queryHoy->execute();
-  $rowHoy = $queryHoy->fetch(PDO::FETCH_OBJ);
-  $queryAyer = $conexion->prepare("SELECT * FROM valores WHERE fecha='$ayer'");
-  $queryAyer->execute();
-  $rowAyer = $queryAyer->fetch(PDO::FETCH_OBJ);
-  //OBTENGO LOS VALORES DE BCV, DOLARTODAY Y LOCALBITCOIN
-  $urlDBCVDT = 'https://s3.amazonaws.com/dolartoday/data.json';
-  $jsonDBCVDT = file_get_contents($urlDBCVDT);
-  $objDBCVDT = json_decode($jsonDBCVDT, true);
-  $bcv = $objDBCVDT['USD']['sicad2'];
-  $dolartoday = $objDBCVDT['USD']['transferencia'];
-  $localbitcoin = $objDBCVDT['USD']['localbitcoin_ref'];
-  //OBTENGO LOS VALORES DE AIRTM
-  $urlTHEAIRTM = 'https://api.yadio.io/json/comp.json';
-  $jsonTHEAIRTM = file_get_contents($urlTHEAIRTM);
-  $objTHEAIRTM = json_decode($jsonTHEAIRTM, true);
-  $theairtm = $objTHEAIRTM['0']['airtm'];
-  //OBTENGO LOS VALORES DE YADIO
-  $urlYADIO = 'https://api.yadio.io/json';
-  $jsonYADIO = file_get_contents($urlYADIO);
-  $objYADIO = json_decode($jsonYADIO, true);
-  $yadio = $objYADIO['USD']['rate'];
-  //GUARDO LOS VALORES DE HOY EN LA BD
-  if (isset($_POST['guardar'])) {
-    $query = $conexion->prepare("INSERT INTO valores(bcv,dolartoday,localbitcoin,theairtm,yadio,fecha) VALUES ($bcv,$dolartoday,$localbitcoin,$theairtm,$yadio,CURRENT_DATE())");
+  //VERIFICO SI HAY CONEXIÓN A INTERNET
+  $internet = @fsockopen('www.google.com', 80);
+  //SI EXISTE LA CONEXIÓN A INTERNET
+  if($internet) {
+    $urlDBCVDT = 'https://s3.amazonaws.com/dolartoday/data.json';
+    $jsonDBCVDT = file_get_contents($urlDBCVDT);
+    $objDBCVDT = json_decode($jsonDBCVDT, true);
+    $bcv = $objDBCVDT['USD']['sicad2'];
+    $dolartoday = $objDBCVDT['USD']['transferencia'];
+    $localbitcoin = $objDBCVDT['USD']['localbitcoin_ref'];
+    //OBTENGO LOS VALORES DE AIRTM
+    $urlTHEAIRTM = 'https://api.yadio.io/json/comp.json';
+    /*$jsonTHEAIRTM = file_get_contents($urlTHEAIRTM);
+    $objTHEAIRTM = json_decode($jsonTHEAIRTM, true);
+    $theairtm = $objTHEAIRTM['0']['airtm'];*/
+    $theairtm = 0;
+    //OBTENGO LOS VALORES DE YADIO
+    $urlYADIO = 'https://api.yadio.io/json';
+    $jsonYADIO = file_get_contents($urlYADIO);
+    $objYADIO = json_decode($jsonYADIO, true);
+    $yadio = $objYADIO['USD']['rate'];
+    $query = $conexion->prepare("SELECT count(*) FROM valores WHERE fecha=CURRENT_DATE())");
     $query->execute();
+    $row = $query->fetch(PDO::FETCH_OBJ);
+    if ($row == 0) {
+      $query = $conexion->prepare("INSERT INTO valores(bcv,dolartoday,localbitcoin,theairtm,yadio,fecha) VALUES ($bcv,$dolartoday,$localbitcoin,$theairtm,$yadio,CURRENT_DATE())");
+      $query->execute();
+    }
   }
+  //OBTENGO EL PROMEDIO DE AYER Y HOY
+  $sqlHoy = $conexion->prepare("SELECT (sum(bcv+dolartoday+localbitcoin+theairtm+yadio)/5) AS promedio FROM valores WHERE fecha=CURRENT_DATE()");
+  $sqlHoy->execute();
+  $promedioHoy = $sqlHoy->fetch(PDO::FETCH_OBJ);
+  $sqlAyer = $conexion->prepare("SELECT (sum(bcv+dolartoday+localbitcoin+theairtm+yadio)/5) AS promedio FROM valores WHERE fecha=(SELECT DATE_SUB(CONCAT(CURDATE()), INTERVAL 1 DAY) AS ayer)");
+  $sqlAyer->execute();
+  $promedioAyer = $sqlAyer->fetch(PDO::FETCH_OBJ);
+  //ALMACENO VALOR DEL PROMEDIO Y PORCENTAJE
+  $valorPromedioHoy = number_format(($promedioHoy->promedio),'2',',','.');
+  //ALMACENO LOS PROMEDIO DEL VALOR Y PORCENTAJE
+  $porcentajePromedio = ((($promedioHoy->promedio)-($promedioAyer->promedio))/($promedioAyer->promedio)*100);
+  //OBTENGO LOS PRECIOS DE HOY Y AYER
+  $queryHoy = $conexion->prepare("SELECT * FROM valores WHERE fecha=CURRENT_DATE()");
+  $queryHoy->execute();
+  $rowHoy = $queryHoy->fetch(PDO::FETCH_OBJ);
+  $queryAyer = $conexion->prepare("SELECT * FROM valores WHERE fecha=(SELECT DATE_SUB(CONCAT(CURDATE()), INTERVAL 1 DAY) AS ayer)");
+  $queryAyer->execute();
+  $rowAyer = $queryAyer->fetch(PDO::FETCH_OBJ);
 ?>
 <!DOCTYPE html>
 <html lang="es" dir="ltr">
@@ -73,36 +78,36 @@
         <tbody>
           <td width="9%"></td>
           <td width="35%" style="text-align:left;">@BCV_ORG_VE</td>
-          <td width="18%" style="text-align: right;"><?php echo number_format($bcv,2,',','.'); ?></td>
-          <td width="" style="text-align: right;"><?php echo $valor = round(($bcv-$rowAyer->bcv)/($rowAyer->bcv)*100,2); ?>%</td>
+          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->bcv,2,',','.'); ?></td>
+          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->bcv-$rowAyer->bcv)/($rowAyer->bcv)*100,2); ?>%</td>
           <td width="10%"><?php echo iconos($valor); ?></td>
         </tbody>
         <tbody>
           <td width="9%"></td>
           <td width="35%" style="text-align: left;">@DOLARTODAY</td>
-          <td width="18%" style="text-align: right;"><?php echo number_format($dolartoday,2,',','.'); ?></td>
-          <td width="" style="text-align: right;"><?php echo $valor = round(($dolartoday-$rowAyer->dolartoday)/($rowAyer->dolartoday)*100,2); ?>%</td>
+          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->dolartoday,2,',','.'); ?></td>
+          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->dolartoday-$rowAyer->dolartoday)/($rowAyer->dolartoday)*100,2); ?>%</td>
           <td width="10%"><?php echo iconos($valor); ?></td>
         </tbody>
         <tbody>
           <td width="9%"></td>
           <td width="35%" style="text-align: left;">@LOCALBITCOIN</td>
-          <td width="18%" style="text-align: right;"><?php echo number_format($localbitcoin,2,',','.'); ?></td>
-          <td width="" style="text-align: right;"><?php echo $valor = round(($localbitcoin-$rowAyer->localbitcoin)/($rowAyer->localbitcoin)*100,2); ?>%</td>
+          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->localbitcoin,2,',','.'); ?></td>
+          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->localbitcoin-$rowAyer->localbitcoin)/($rowAyer->localbitcoin)*100,2); ?>%</td>
           <td width="10%"><?php echo iconos($valor); ?></td>
         </tbody>
         <tbody>
           <td width="9%"></td>
           <td width="35%" style="text-align: left;">@THEAIRTM</td>
-          <td width="18%" style="text-align: right;"><?php echo number_format($theairtm,2,',','.'); ?></td>
-          <td width="" style="text-align: right;"><?php echo $valor = round(($theairtm-$rowAyer->theairtm)/($rowAyer->theairtm)*100,2); ?>%</td>
+          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->theairtm,2,',','.'); ?></td>
+          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->theairtm-$rowAyer->theairtm)/($rowAyer->theairtm)*100,2); ?>%</td>
           <td width="10%"><?php echo iconos($valor); ?></td>
         </tbody>
         <tbody>
           <td width="9%"></td>
           <td width="35%" style="text-align: left;">@YADIO_IO</td>
-          <td width="18%" style="text-align: right;"><?php echo number_format($yadio,2,',','.'); ?></td>
-          <td width="" style="text-align: right;"><?php echo $valor = round(($yadio-$rowAyer->yadio)/($rowAyer->yadio)*100,2); ?>%</td>
+          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->yadio,2,',','.'); ?></td>
+          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->yadio-$rowAyer->yadio)/($rowAyer->yadio)*100,2); ?>%</td>
           <td width="10%"><?php echo iconos($valor); ?></td>
         </tbody>
       </table>
@@ -122,9 +127,6 @@
       </div>
     </div>
   </body>
-  <form action="<?php $_SERVER['PHP_SELF'] ?>" method="post" role="form">
-    <button type="submit" name="guardar" class="btn btn-flat">Guardar datos</button>
-  </form>
 </html>
 
 <?php
