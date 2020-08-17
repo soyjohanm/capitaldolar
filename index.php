@@ -6,44 +6,24 @@
   //VERIFICO SI HAY CONEXIÓN A INTERNET
   $internet = @fsockopen('www.google.com', 80);
   //SI EXISTE LA CONEXIÓN A INTERNET
-  if($internet) {
+  /*if($internet) {
     $urlDBCVDT = 'https://s3.amazonaws.com/dolartoday/data.json';
     $jsonDBCVDT = file_get_contents($urlDBCVDT);
     $objDBCVDT = json_decode($jsonDBCVDT, true);
-    $bcv = $objDBCVDT['USD']['sicad2'];
     $dolartoday = $objDBCVDT['USD']['transferencia'];
-    $localbitcoin = $objDBCVDT['USD']['localbitcoin_ref'];
-    //OBTENGO LOS VALORES DE AIRTM
-    $urlTHEAIRTM = 'https://api.yadio.io/json/comp.json';
-    /*$jsonTHEAIRTM = file_get_contents($urlTHEAIRTM);
-    $objTHEAIRTM = json_decode($jsonTHEAIRTM, true);
-    $theairtm = $objTHEAIRTM['0']['airtm'];*/
-    $theairtm = 0;
     //OBTENGO LOS VALORES DE YADIO
-    $urlYADIO = 'https://api.yadio.io/json';
+    /*$urlYADIO = 'https://api.yadio.io/json';
     $jsonYADIO = file_get_contents($urlYADIO);
     $objYADIO = json_decode($jsonYADIO, true);
-    $yadio = $objYADIO['USD']['rate'];
-    $query = $conexion->prepare("SELECT count(*) AS cantidad FROM valores WHERE fecha=CURRENT_DATE())");
+    $yadio = $objYADIO['USD']['avg24h'];
+    $query = $conexion->prepare("INSERT INTO valores(dolartoday,yadio,fecha) VALUES ($dolartoday,$yadio,CURRENT_DATE())");
     $query->execute();
-    $row = $query->fetch(PDO::FETCH_OBJ);
-    if ($row->cantidad == 0) {
-	  $query = $conexion->prepare("SELECT count(*) AS cantidad FROM valores");
-	  $query->execute();
-      $row = $query->fetch(PDO::FETCH_OBJ);
-	  if ($row->cantidad == 0) {
-		$query = $conexion->prepare("INSERT INTO valores(bcv,dolartoday,localbitcoin,theairtm,yadio,fecha) VALUES ($bcv,$dolartoday,$localbitcoin,$theairtm,$yadio,CURRENT_DATE())");
-        $query->execute();
-	  }
-      $query = $conexion->prepare("INSERT INTO valores(bcv,dolartoday,localbitcoin,theairtm,yadio,fecha) VALUES ($bcv,$dolartoday,$localbitcoin,$theairtm,$yadio,(SELECT DATE_SUB(CONCAT(CURDATE()), INTERVAL 1 DAY) AS ayer))");
-      $query->execute();
-    }
-  }
+  }*/
   //OBTENGO EL PROMEDIO DE AYER Y HOY
-  $sqlHoy = $conexion->prepare("SELECT (sum(bcv+dolartoday+localbitcoin+theairtm+yadio)/5) AS promedio FROM valores WHERE fecha=CURRENT_DATE()");
+  $sqlHoy = $conexion->prepare("SELECT (sum(akbfintech+dolartoday+localbitcoin+theairtm+yadio)/5) AS promedio FROM valores WHERE fecha=CURRENT_DATE()");
   $sqlHoy->execute();
   $promedioHoy = $sqlHoy->fetch(PDO::FETCH_OBJ);
-  $sqlAyer = $conexion->prepare("SELECT (sum(bcv+dolartoday+localbitcoin+theairtm+yadio)/5) AS promedio FROM valores WHERE fecha=(SELECT DATE_SUB(CONCAT(CURDATE()), INTERVAL 1 DAY) AS ayer)");
+  $sqlAyer = $conexion->prepare("SELECT (sum(akbfintech+dolartoday+localbitcoin+theairtm+yadio)/5) AS promedio FROM valores WHERE fecha=(SELECT DATE_SUB(CONCAT(CURDATE()), INTERVAL 1 DAY) AS ayer)");
   $sqlAyer->execute();
   $promedioAyer = $sqlAyer->fetch(PDO::FETCH_OBJ);
   //ALMACENO VALOR DEL PROMEDIO Y PORCENTAJE
@@ -57,6 +37,15 @@
   $queryAyer = $conexion->prepare("SELECT * FROM valores WHERE fecha=(SELECT DATE_SUB(CONCAT(CURDATE()), INTERVAL 1 DAY) AS ayer)");
   $queryAyer->execute();
   $rowAyer = $queryAyer->fetch(PDO::FETCH_OBJ);
+  if (isset($_POST['guardar'])) {
+    $query = $conexion->prepare("UPDATE SET akbfintech=".$_POST['akbfintech'].",dolartoday=".$_POST['dolartoday'].",localbitcoin=".$_POST['localbitcoin'].",theairtm=".$_POST['airtm'].",yadio=".$_POST['yadio']." WHERE fecha=CURRENT_DATE()");
+	$query->execute();
+  }
+  if (isset($_POST['nuevo'])) {
+	$manana = date("Y-m-d", (time() + (24 * 60 * 60)));
+    $query = $conexion->prepare("INSERT INTO valores(fecha) VALUES (".$manana.")");
+	$query->execute();
+  }
 ?>
 <!DOCTYPE html>
 <html lang="es" dir="ltr">
@@ -81,12 +70,19 @@
           <span id="flechita"><?php echo iconos($valor); ?></span>
         </div>
       </div>
-      <table class="valores" width="750px" style="padding:15px;">
+      <table class="valores" width="750px">
+		<tbody>
+          <td width="9%"></td>
+          <td width="35%" style="text-align: left;">@AIRTMINC</td>
+          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->theairtm,2,',','.'); ?></td>
+          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->theairtm-$rowAyer->theairtm)/($rowAyer->theairtm)*100,2); ?>%</td>
+          <td width="10%"><?php echo iconos($valor); ?></td>
+        </tbody>
         <tbody>
           <td width="9%"></td>
-          <td width="35%" style="text-align:left;">@BCV_ORG_VE</td>
-          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->bcv,2,',','.'); ?></td>
-          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->bcv-$rowAyer->bcv)/($rowAyer->bcv)*100,2); ?>%</td>
+          <td width="35%" style="text-align:left;">@AKBFINTECH</td>
+          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->akbfintech,2,',','.'); ?></td>
+          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->akbfintech-$rowAyer->akbfintech)/($rowAyer->akbfintech)*100,2); ?>%</td>
           <td width="10%"><?php echo iconos($valor); ?></td>
         </tbody>
         <tbody>
@@ -102,14 +98,7 @@
           <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->localbitcoin,2,',','.'); ?></td>
           <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->localbitcoin-$rowAyer->localbitcoin)/($rowAyer->localbitcoin)*100,2); ?>%</td>
           <td width="10%"><?php echo iconos($valor); ?></td>
-        </tbody>
-        <tbody>
-          <td width="9%"></td>
-          <td width="35%" style="text-align: left;">@THEAIRTM</td>
-          <td width="18%" style="text-align: right;"><?php echo number_format($rowHoy->theairtm,2,',','.'); ?></td>
-          <td width="" style="text-align: right;"><?php echo $valor = round(($rowHoy->theairtm-$rowAyer->theairtm)/($rowAyer->theairtm)*100,2); ?>%</td>
-          <td width="10%"><?php echo iconos($valor); ?></td>
-        </tbody>
+        </tbody>        
         <tbody>
           <td width="9%"></td>
           <td width="35%" style="text-align: left;">@YADIO_IO</td>
@@ -130,8 +119,23 @@
         <span>capitaldolar</span>
       </div>
       <div id="contenedor_informacion">
-        <p>Actualización del día <?php saber_dia(date('Y-m-d')); echo date('d/m/Y'); ?> <br> BS <?php echo $valorPromedioHoy; ?> precio promedio por dólar hubo un <?php echo $valor = ($porcentajePromedio < 0) ? 'descenso' : 'ascenso'; ?> del <?php echo round($porcentajePromedio,2); ?>% con respecto a la publicación anterior. <br> -- <br> @capitaldolar tiene exclusivamente la responsabilidad de informar el precio del dólar según diferentes entidades y medios electrónicos. La decisión que tomen nuestros usuarios sobre la información aquí suministrada, no tiene ninguna relación con nosotros. <br> -- <br> #dolartoday #bcv #airtm #yadio #noticiasvenezuela #Venezuela #venezolanos #dolar #mercadocambiario #remesas #noticias #dolares #dolarparalelo</p>
+        <p>Actualización del día <?php saber_dia(date('Y-m-d')); echo date('d/m/Y'); ?> <br> BS <?php echo $valorPromedioHoy; ?> precio promedio por dólar hubo un <?php echo $valor = ($porcentajePromedio < 0) ? 'descenso' : 'ascenso'; ?> del <?php echo round($porcentajePromedio,2); ?>% con respecto a la publicación anterior. <br> -- <br> @capitaldolar tiene exclusivamente la responsabilidad de informar el precio del dólar según diferentes entidades y medios electrónicos. La decisión que tomen nuestros usuarios sobre la información aquí suministrada, no tiene ninguna relación con nosotros. <br> -- <br> #dolartoday #akbfintech #airtm #yadio #noticiasvenezuela #Venezuela #venezolanos #dolar #mercadocambiario #promediodolar #remesas #noticias #dolares #dolarparalelo #promediodeldolar</p>
       </div>
+	  <div id="contenedor_formulario">
+	    <form method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
+		  <span>THEAIRTM: </span><input type="number" name="airtm" id="airtm" min="0" step="0.01" value="<?php echo $rowHoy->theairtm; ?>">
+		  <span>AKBFINTECH: </span><input type="number" name="akbfintech" id="akbfintech" min="0" step="0.01" value="<?php echo $rowHoy->akbfintech; ?>"><br>
+		  <span>DOLARTODAY: </span><input type="number" name="dolartoday" id="dolartoday" min="0" step="0.01" value="<?php echo $rowHoy->dolartoday; ?>"><br>
+		  <span>LOCALBITCOIN: </span><input type="number" name="localbitcoin" id="localbitcoin" min="0" step="0.01" value="<?php echo $rowHoy->localbitcoin; ?>"><br>
+		  <span>YADIO_IO: </span><input type="number" name="yadio" id="yadio" min="0" step="0.01" value="<?php echo $rowHoy->yadio; ?>">
+		  <button type="submit" name="guardar" id="guardar" class="btn btn-flat right">Guardar</button>
+		</form>
+	  </div>
+	  <div id="contenedor_nueva">
+	    <form method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
+		  <button type="submit" name="nuevo" id="nuevo" class="btn btn-large btn-flat">Nuevo día</button>
+		</form>
+	  </div>
     </div>
   </body>
 </html>
