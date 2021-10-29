@@ -1,6 +1,9 @@
 body {
   font-family: Ubuntu, 'Segoe UI', sans-serif;
   background-color: #f5f5f5;
+  display: flex;
+  min-height: 98vh;
+  flex-direction: column;
 }
 #contenedor_imagen {
   height: 750px;
@@ -34,6 +37,13 @@ body {
   top: 310px;
   left: 64px;
 }
+#titulo{
+  position: absolute;
+  top: 310px;
+  left: 82px;
+  font-size: 40px;
+  font-weight: bold;
+}
 #valorPromedio {
   text-shadow: 1.5px 1.5px rgba(0,0,0,0.57);
   font-weight: bold;
@@ -57,11 +67,18 @@ body {
   font-family: Muli, 'Segoe UI', sans-serif;
   font-size: 22px;
   position: absolute;
-  top: 405px;
+  top: 395px;
   padding:15px;
 }
 td {
-  padding: 6px;
+  padding: 4px;
+}
+.valoresElectronicos {
+  font-family: Muli, 'Segoe UI', sans-serif;
+  font-size: 35px;
+  position: absolute;
+  top: 400px;
+  padding:15px;
 }
 #instagram {
   font-family: Impact, 'Segoe UI', sans-serif;
@@ -156,9 +173,12 @@ button, input {
 }
 #contenedor_nueva {
   position: absolute;
-  top: 570px;
+  top: 715px;
   width: 38%;
   left: 61%;
   background-color: white;
   text-align: center;
+}
+main {
+  flex: 1 0 auto;
 }
